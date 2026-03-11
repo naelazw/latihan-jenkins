@@ -1,0 +1,12 @@
+---
+- name: Simulasi Penyiapan Host
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Membuat folder simulasi server
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /root/dev_server
+        - /root/prod_server

@@ -38,10 +38,12 @@ pipeline { agent any
             }
         }
 
-        stage('Simulasi Test') {
+       stage('Deploy to Simulation Server') {
             steps {
-                echo "ALHAMDULILLAH! Berhasil build otomatis"
+                sshagent(credentials: ['ssh-prod']) {
+                    sh 'cp -r ./* /root/prod_server/'
+                    echo "Alhamdulillah, Berhasil Deploy ke Folder Simulasi!"
+                }
             }
         }
-    }
 }
