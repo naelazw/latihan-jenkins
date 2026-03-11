@@ -1,9 +1,8 @@
-pipeline {
-    agent any
-
+pipeline { agent any
     stages {
         stage('Checkout SCM') {
             steps {
+                // Mengambil kode dari repositori GitHub
                 checkout scm
             }
         }
@@ -14,11 +13,24 @@ pipeline {
                     // Menggunakan image PHP 8.2 yang stabil
                     docker.image('php:8.2-cli').inside('-u root') {
                         sh '''
-                            apt-get update && apt-get install -y zip unzip
-                            curl -sS [https://getcomposer.org/installer](https://getcomposer.org/installer) | php -- --install-dir=/usr/local/bin --filename=composer
-                            
+                            # 1. Update dan install tools dasar
+                            apt-get update
+                            apt-get install -y zip unzip curl
+
+                            # 2. Install Composer (Cara yang lebih bersih dan aman)
+                            curl -sS https://getcomposer.org/installer -o composer-setup.php
+                            php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+                            rm composer-setup.php
+
+                            # 3. Install dependensi Laravel
                             composer install --no-interaction --prefer-dist
-                            cp .env.example .env
+
+                            # 4. Setup environment file
+                            if [ ! -f .env ]; then
+                                cp .env.example .env
+                            fi
+
+                            # 5. Generate Application Key
                             php artisan key:generate
                         '''
                     }
@@ -28,7 +40,7 @@ pipeline {
 
         stage('Simulasi Test') {
             steps {
-                echo " berhasil build otomatis"
+                echo "ALHAMDULILLAH! Berhasil build otomatis"
             }
         }
     }
