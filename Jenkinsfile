@@ -11,7 +11,7 @@ pipeline { agent any
             steps {
                 script {
                     // Menggunakan image PHP 8.2 yang stabil
-                    docker.image('php:8.2-cli').inside('-u root') {
+                    docker.image('php:8.4-cli').inside('-u root') {
                         sh '''
                             # 1. Update dan install tools dasar
                             apt-get update
