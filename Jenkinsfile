@@ -37,19 +37,31 @@ pipeline {
 
         stage('Deploy to Simulation Server') {
             steps {
-                // Menggunakan SSH Agent dengan credential 'ssh-prod' yang sudah kamu buat
                 sshagent(credentials: ['ssh-prod']) {
                     sh '''
-                        # 1. Masuk ke WSL via SSH untuk membuat folder tujuan (Pintu Resmi)
+                        # 1. Buat folder tujuan di server target
                         ssh -o StrictHostKeyChecking=no root@172.27.12.115 "mkdir -p /root/prod_server"
                         
-                        # 2. Mengirim file menggunakan SCP (Secure Copy) ke IP WSL kamu
-                        # Ini akan menggunakan kunci 'ssh-prod' secara otomatis
+                        # 2. Kirim file hasil build ke server target
                         scp -o StrictHostKeyChecking=no -r ./* root@172.27.12.115:/root/prod_server/
-                        echo "ALHAMDULILLAH! Deploy Berhasil "
+                        
+                        # 3. Jalankan Laravel di dalam container Docker di server target
+                        ssh -o StrictHostKeyChecking=no root@172.27.12.115 "
+                            cd /root/prod_server
+                            # Hapus container lama jika ada agar port tidak bentrok
+                            docker rm -f laravel-online || true
+                            
+                            # Jalankan container baru di port 8001
+                            docker run -d --name laravel-online \
+                                -p 8001:8000 \
+                                -v \$(pwd):/var/www/html \
+                                -w /var/www/html \
+                                php:8.4-cli php artisan serve --host=0.0.0.0
+                        "
+                        echo "ALHAMDULILLAH! Deploy Berhasil dan Sudah Running di Port 8001"
                     '''
                 }
             }
         }
-    }
-}
+    } 
+} 
