@@ -39,26 +39,29 @@ pipeline {
             steps {
                 sshagent(credentials: ['ssh-prod']) {
                     sh '''
-                        # 1. Buat folder tujuan di server target
+                        # 1. Pastikan folder tujuan ada
                         ssh -o StrictHostKeyChecking=no root@172.27.12.115 "mkdir -p /root/prod_server"
                         
-                        # 2. Kirim file hasil build ke server target
+                        # 2. Kirim file hasil build ke server
                         scp -o StrictHostKeyChecking=no -r ./* root@172.27.12.115:/root/prod_server/
                         
-                        # 3. Jalankan Laravel di dalam container Docker di server target
+                        # 3. Eksekusi di server target (Biar otomatis tampil kayak di browser kamu tadi)
                         ssh -o StrictHostKeyChecking=no root@172.27.12.115 "
                             cd /root/prod_server
-                            # Hapus container lama jika ada agar port tidak bentrok
                             docker rm -f laravel-online || true
                             
-                            # Jalankan container baru di port 8001
                             docker run -d --name laravel-online \
                                 -p 8001:8000 \
-                                -v \$(pwd):/var/www/html \
+                                -v /root/prod_server:/var/www/html \
                                 -w /var/www/html \
                                 php:8.4-cli php artisan serve --host=0.0.0.0
+                            
+                            # Jalankan perintah sakti yang tadi kita coba manual
+                            docker exec laravel-online cp .env.example .env || true
+                            docker exec laravel-online php artisan key:generate
+                            docker exec -u root laravel-online chmod -R 777 storage bootstrap/cache
                         "
-                        echo "ALHAMDULILLAH! Deploy Berhasil dan Sudah Running di Port 8001"
+                        echo "port 8001"
                     '''
                 }
             }
